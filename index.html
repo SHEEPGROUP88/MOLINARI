@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Despesas Pessoais 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --azul:#1f3864; --azul2:#2e5496; --azul-cl:#e8eef7;
+    --mari:#c2185b; --mari-cl:#fce4ec;
+    --mol:#1f3864; --mol-cl:#e3e9f4;
+    --outros:#6b7280; --outros-cl:#eceef1;
+    --verde:#2e7d32; --verde-cl:#e8f5e9;
+    --ambar:#b7791f; --ambar-cl:#fdf3e3;
+    --verm:#c0392b; --verm-cl:#fdecea;
+    --cinza:#f4f5f7; --cinza2:#e6e8ec; --texto:#2b2f38; --suave:#6b7280;
+    --sombra:0 1px 3px rgba(16,24,40,.08),0 1px 2px rgba(16,24,40,.06);
+    --sombra2:0 4px 16px rgba(16,24,40,.10);
+    --raio:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+    background:linear-gradient(180deg,#f7f9fc 0%,#eef2f8 100%);color:var(--texto);
+    -webkit-font-smoothing:antialiased;padding-bottom:40px;line-height:1.45}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 14px}
+  header{background:linear-gradient(135deg,var(--azul) 0%,var(--azul2) 100%);color:#fff;
+    padding:24px 20px 20px;border-radius:0 0 24px 24px;box-shadow:var(--sombra2);position:relative;overflow:hidden}
+  header::after{content:"";position:absolute;top:-40px;right:-30px;width:150px;height:150px;
+    background:rgba(255,255,255,.06);border-radius:50%}
+  header h1{font-size:1.3rem;font-weight:700;letter-spacing:.3px}
+  header .sub{font-size:.82rem;opacity:.85;margin-top:4px}
+  header .badge{display:inline-block;margin-top:11px;background:rgba(255,255,255,.15);
+    padding:5px 12px;border-radius:20px;font-size:.72rem;backdrop-filter:blur(4px)}
+
+  /* FAIXA DE ALERTA - contas próximas */
+  .alert-strip{margin-top:16px;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:10px}
+  @media(max-width:860px){.alert-strip{grid-template-columns:1fr 1fr 1fr}}
+  @media(max-width:520px){.alert-strip{grid-template-columns:1fr 1fr}}
+  .a-box{border-radius:14px;padding:14px 15px;box-shadow:var(--sombra);position:relative;overflow:hidden;border:1px solid #eef0f4;background:#fff}
+  .a-box .ab-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.4px;font-weight:700;color:var(--suave)}
+  .a-box .ab-val{font-size:1.32rem;font-weight:800;margin-top:6px;letter-spacing:-.5px}
+  .a-box .ab-sub{font-size:.68rem;color:var(--suave);margin-top:3px}
+  .a-box.destaque{background:linear-gradient(135deg,#fdecea,#fff);border:1.5px solid var(--verm)}
+  .a-box.destaque .ab-lbl{color:var(--verm)}
+  .a-box.destaque .ab-val{color:var(--verm)}
+  .a-box.d7{border-top:3px solid var(--verm)}
+  .a-box.d15{border-top:3px solid var(--ambar)}
+  .a-box.d30{border-top:3px solid var(--azul2)}
+  .a-box.d90{border-top:3px solid var(--verde)}
+  .a-box.d7 .ab-val{color:var(--verm)} .a-box.d15 .ab-val{color:var(--ambar)}
+  .a-box.d30 .ab-val{color:var(--azul2)} .a-box.d90 .ab-val{color:var(--verde)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
+  .card{background:#fff;border-radius:var(--raio);padding:16px 18px;box-shadow:var(--sombra);border:1px solid #eef0f4}
+  .kpi .k-lbl{font-size:.72rem;color:var(--suave);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+  .kpi .k-val{font-size:1.5rem;font-weight:700;margin-top:5px;letter-spacing:-.5px}
+  .kpi .k-sub{font-size:.72rem;color:var(--suave);margin-top:3px}
+  .kpi.prev .k-val{color:var(--azul2)}
+  .kpi.pago .k-val{color:var(--verde)}
+  .kpi.aberto .k-val{color:var(--ambar)}
+  .kpi.pct .k-val{color:var(--azul)}
+  .split-bar{display:flex;height:9px;border-radius:6px;overflow:hidden;margin-top:10px;background:var(--cinza2)}
+  .split-bar .pg{background:linear-gradient(90deg,var(--verde),#43a047)}
+  .split-bar .vc{background:linear-gradient(90deg,var(--ambar),#d99a2b)}
+  .split-leg{display:flex;justify-content:space-between;font-size:.68rem;margin-top:5px;color:var(--suave)}
+
+  .section{margin-top:26px}
+  .section h2{font-size:1.05rem;font-weight:700;color:var(--azul);margin-bottom:3px;display:flex;align-items:center;gap:8px}
+  .section .desc{font-size:.8rem;color:var(--suave);margin-bottom:12px}
+  .section h2::before{content:"";width:4px;height:18px;background:var(--azul2);border-radius:3px;display:inline-block}
+  .chart-card{background:#fff;border-radius:var(--raio);padding:18px;box-shadow:var(--sombra);border:1px solid #eef0f4}
+  .chart-wrap{position:relative;height:280px}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:720px){.two-col{grid-template-columns:1fr}.chart-wrap{height:240px}}
+
+  /* AGENDA - destaque contas próximas */
+  .agenda-card{background:#fff;border-radius:var(--raio);box-shadow:var(--sombra);border:1px solid #eef0f4;overflow:hidden}
+  .agenda-head{background:var(--azul);color:#fff;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  .agenda-head .ah-tot{font-size:1.15rem;font-weight:700}
+  .agenda-head .ah-lbl{font-size:.7rem;opacity:.85;text-transform:uppercase;letter-spacing:.5px}
+  .win-filters{display:flex;gap:6px;flex-wrap:wrap}
+  .win-chip{border:1.5px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;padding:5px 12px;
+    border-radius:16px;font-size:.72rem;cursor:pointer;transition:.15s;font-weight:600}
+  .win-chip.active{background:#fff;color:var(--azul);border-color:#fff}
+  .agenda-list{max-height:560px;overflow-y:auto}
+  .a-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f0f1f4;transition:.15s}
+  .a-item:last-child{border-bottom:none}
+  .a-item:hover{background:var(--cinza)}
+  .a-item.urg{background:linear-gradient(90deg,var(--verm-cl),#fff)}
+  .a-item.urg:hover{background:var(--verm-cl)}
+  .a-item.soon{background:linear-gradient(90deg,var(--ambar-cl),#fff)}
+  .a-date{min-width:54px;text-align:center;background:var(--cinza);border-radius:10px;padding:6px 4px}
+  .a-item.urg .a-date{background:var(--verm);color:#fff}
+  .a-item.soon .a-date{background:var(--ambar);color:#fff}
+  .a-date .d{font-size:1.15rem;font-weight:800;line-height:1;color:var(--azul)}
+  .a-item.urg .a-date .d,.a-item.soon .a-date .d{color:#fff}
+  .a-date .m{font-size:.6rem;text-transform:uppercase;font-weight:700;margin-top:2px;color:var(--suave)}
+  .a-item.urg .a-date .m,.a-item.soon .a-date .m{color:rgba(255,255,255,.9)}
+  .a-body{flex:1;min-width:0}
+  .a-desc{font-weight:600;font-size:.87rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .a-meta{font-size:.71rem;color:var(--suave);margin-top:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .a-tag{display:inline-block;font-size:.6rem;font-weight:700;padding:2px 8px;border-radius:10px;color:#fff}
+  .a-tag.mol{background:var(--mol)} .a-tag.mari{background:var(--mari)} .a-tag.outros{background:var(--outros)}
+  .a-daysbadge{font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--cinza2);color:var(--suave)}
+  .a-item.urg .a-daysbadge{background:var(--verm);color:#fff}
+  .a-item.soon .a-daysbadge{background:var(--ambar);color:#fff}
+  .a-right{text-align:right;white-space:nowrap}
+  .a-val{font-weight:800;font-size:.95rem;color:var(--texto)}
+  .a-item.urg .a-val{color:var(--verm)}
+  .a-conta{font-size:.65rem;color:var(--suave);margin-top:2px}
+  .month-sep{padding:8px 16px;background:var(--azul-cl);font-size:.72rem;font-weight:700;
+    color:var(--azul);text-transform:uppercase;letter-spacing:.5px;position:sticky;top:0;z-index:2}
+
+  /* Contas faltantes do mês */
+  .falta-card{background:#fff;border-radius:var(--raio);box-shadow:var(--sombra);border:1.5px solid var(--ambar);overflow:hidden}
+  .falta-head{background:linear-gradient(135deg,var(--ambar),#d99a2b);color:#fff;padding:14px 18px;display:flex;justify-content:space-between;align-items:center}
+
+  table{width:100%;border-collapse:collapse;font-size:.82rem}
+  .footer{text-align:center;font-size:.74rem;color:var(--suave);margin-top:30px;padding:0 20px;line-height:1.6}
+  .empty{padding:40px;text-align:center;color:var(--suave);font-size:.85rem}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 4px;align-items:center}
+  .filters .lbl{font-size:.72rem;color:var(--suave);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .chip{border:1.5px solid var(--cinza2);background:#fff;color:var(--texto);padding:7px 14px;
+    border-radius:20px;font-size:.8rem;cursor:pointer;transition:.15s;font-weight:500}
+  .chip.active{background:var(--azul);color:#fff;border-color:var(--azul)}
+  .chip.mari.active{background:var(--mari);border-color:var(--mari)}
+  .chip.mol.active{background:var(--mol);border-color:var(--mol)}
+  .chip.outros.active{background:var(--outros);border-color:var(--outros)}
+  .outros-card{background:#fff;border-radius:var(--raio);box-shadow:var(--sombra);border:1px solid #eef0f4;padding:16px 18px}
+  .outros-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f0f1f4;font-size:.85rem}
+  .outros-row:last-child{border-bottom:none}
+  .outros-row .on{font-weight:600}
+  .outros-row .ov{font-weight:700;color:var(--outros)}
+  .outros-row .osub{font-size:.68rem;color:var(--suave);margin-top:2px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>💰 Despesas Pessoais 2026</h1>
+    <div class="sub">MOLINARI &amp; MARI — visão consolidada, contas próximas e planejamento de caixa</div>
+    <div class="badge">📅 Atualizado em <span id="dtAtu"></span> · Mês em curso: <span id="mesAtu"></span></div>
+
+    <!-- FAIXA DE CONTAS PRÓXIMAS (destaque) -->
+    <div class="alert-strip" id="alertStrip"></div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- KPIs do ano -->
+  <div class="grid" id="kpis"></div>
+
+  <!-- CONTAS FALTANTES DO MÊS -->
+  <div class="section">
+    <h2>📌 Contas faltantes do mês (<span id="mesAtu2"></span>)</h2>
+    <div class="desc">Lançamentos ainda em aberto no mês em curso — prioridade imediata de pagamento.</div>
+    <div class="falta-card">
+      <div class="falta-head">
+        <div><div class="ah-lbl" style="opacity:.9">A pagar ainda em <span id="mesAtu3"></span></div>
+          <div class="ah-tot" id="faltaTot"></div></div>
+        <div style="text-align:right"><div class="ah-lbl" style="opacity:.9">Contas</div>
+          <div class="ah-tot" id="faltaN"></div></div>
+      </div>
+      <div class="agenda-list" id="faltaList"></div>
+    </div>
+  </div>
+
+  <!-- AGENDA CONTAS PRÓXIMAS -->
+  <div class="section">
+    <h2>⏳ Contas próximas — agenda de vencimentos</h2>
+    <div class="desc">Filtre pela janela de dias. Contas em até 7 dias aparecem em vermelho; até 15 dias em âmbar.</div>
+    <div class="agenda-card">
+      <div class="agenda-head">
+        <div><div class="ah-lbl">Total na janela</div><div class="ah-tot" id="janTot"></div></div>
+        <div class="win-filters" id="winFilters">
+          <button class="win-chip" data-w="7" onclick="setWin(this,7)">7 dias</button>
+          <button class="win-chip" data-w="15" onclick="setWin(this,15)">15 dias</button>
+          <button class="win-chip" data-w="30" onclick="setWin(this,30)">30 dias</button>
+          <button class="win-chip active" data-w="90" onclick="setWin(this,90)">90 dias</button>
+        </div>
+        <div style="text-align:right"><div class="ah-lbl">Contas</div><div class="ah-tot" id="janN"></div></div>
+      </div>
+      <div class="agenda-list" id="agendaList"></div>
+    </div>
+  </div>
+
+  <!-- Filtro titular para gráficos -->
+  <div class="filters">
+    <span class="lbl">Filtrar gráficos por titular:</span>
+    <button class="chip active" data-tit="TODOS" onclick="setTit(this,'TODOS')">Casal</button>
+    <button class="chip mol" data-tit="MOLINARI" onclick="setTit(this,'MOLINARI')">Molinari</button>
+    <button class="chip mari" data-tit="MARI" onclick="setTit(this,'MARI')">Mari</button>
+    <button class="chip outros" data-tit="OUTROS" onclick="setTit(this,'OUTROS')">Outros (empresas/terceiros)</button>
+  </div>
+
+  <!-- Evolução mensal -->
+  <div class="section">
+    <h2>Evolução mensal</h2>
+    <div class="desc">Previsto mês a mês em 2026. Picos em junho e dezembro concentram despesas extraordinárias.</div>
+    <div class="chart-card"><div class="chart-wrap"><canvas id="chEvol"></canvas></div></div>
+  </div>
+
+  <!-- Pago x aberto + tipo -->
+  <div class="section">
+    <div class="two-col">
+      <div class="chart-card">
+        <h2 style="font-size:.95rem;margin-bottom:10px;color:var(--azul)">Pago × Em aberto (mês a mês)</h2>
+        <div class="chart-wrap" style="height:240px"><canvas id="chPagoAberto"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h2 style="font-size:.95rem;margin-bottom:10px;color:var(--azul)">Composição por tipo</h2>
+        <div class="chart-wrap" style="height:240px"><canvas id="chTipo"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Categorias + conta pagadora -->
+  <div class="section">
+    <div class="two-col">
+      <div class="chart-card">
+        <h2 style="font-size:.95rem;margin-bottom:10px;color:var(--azul)">Categorias do ano</h2>
+        <div class="chart-wrap" style="height:360px"><canvas id="chCat"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h2 style="font-size:.95rem;margin-bottom:10px;color:var(--azul)">Origem do pagamento (top 8)</h2>
+        <div class="chart-wrap" style="height:360px"><canvas id="chPag"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detalhamento Outros (empresas/terceiros) -->
+  <div class="section" id="secOutros" style="display:none">
+    <h2>🏢 Outros — empresas e terceiros na planilha pessoal</h2>
+    <div class="desc">Lançamentos com titular diferente de Molinari/Mari (ex.: entidades do Grupo Sheep, terceiros) que passam pelo controle pessoal.</div>
+    <div class="outros-card" id="outrosList"></div>
+  </div>
+
+  <div class="footer">
+    Painel gerado a partir das abas mensais do controle pessoal (JAN–DEZ 2026).<br>
+    Janelas de dias calculadas a partir de <span id="dtAtu2"></span>. Para atualizar, registre os pagamentos e gere o painel novamente.<br>
+    <span style="opacity:.7">Uso privado · MOLINARI &amp; MARI</span>
+  </div>
+</div>
+
+<script>
+const DATA = {"atualizado": "18/07/2026", "mesAtual": "Julho", "kpi": {"prev": 932054.6889999994, "pago": 511020.02900000004, "aberto": 421034.6599999994, "pct_pago": 0.5482725799580204, "pct_vencer": 0.4517274200419796, "n": 287}, "faltamMes": {"val": 24195.5, "n": 9, "itens": [{"venc": "2026-07-20", "tit": "MOLINARI", "cat": "SAÚDE", "desc": "Plano de Saúde Mari / Valentina", "valor": 818.44, "mes": "JULHO", "conta": "—", "tipo": "Fixa/Variável", "dias": 2}, {"venc": "2026-07-20", "tit": "MOLINARI", "cat": "SAÚDE", "desc": "Plano de Saúde Molinari", "valor": 411.74, "mes": "JULHO", "conta": "—", "tipo": "Fixa/Variável", "dias": 2}, {"venc": "2026-07-20", "tit": "MOLINARI", "cat": "MOLINARI", "desc": "Cartão Molinari Sicredi", "valor": 4389.08, "mes": "JULHO", "conta": "—", "tipo": "Variável", "dias": 2}, {"venc": "2026-07-21", "tit": "MOLINARI", "cat": "CASA", "desc": "Fatura Cartão Nubank", "valor": 800.0, "mes": "JULHO", "conta": "—", "tipo": "Fixa/Variável", "dias": 3}, {"venc": "2026-07-25", "tit": "MOLINARI", "cat": "CASA", "desc": "Compagas", "valor": 138.98, "mes": "JULHO", "conta": "—", "tipo": "Fixa/Variável", "dias": 7}, {"venc": "2026-07-25", "tit": "MOLINARI", "cat": "DIVERSOS", "desc": "Cartão Itau - Mãe ULTIMA", "valor": 2567.26, "mes": "JULHO", "conta": "—", "tipo": "Fixa/Variável", "dias": 7}, {"venc": "2026-07-28", "tit": "MOLINARI", "cat": "APARTAMENTO", "desc": "Parcela Apartamento", "valor": 10300.0, "mes": "JULHO", "conta": "—", "tipo": "Fixa/Variável", "dias": 10}, {"venc": "2026-07-29", "tit": "MOLINARI", "cat": "CASA", "desc": "Aluguel Sayuri", "valor": 4270.0, "mes": "JULHO", "conta": "—", "tipo": "Fixa", "dias": 11}, {"venc": "2026-07-30", "tit": "MOLINARI", "cat": "DIVERSOS", "desc": "Empréstimo Mari", "valor": 500.0, "mes": "JULHO", "conta": "—", "tipo": "Fixa", "dias": 12}]}, "janelas": {"d7": {"val": 9125.5, "n": 6}, "d15": {"val": 25645.5, "n": 10}, "d30": {"val": 59191.630000000005, "n": 23}, "d90": {"val": 148315.43000000002, "n": 67}}, "titular": {"MOLINARI": {"prev": 828358.2799999997, "pago": 407323.6200000001, "n": 221}, "MARI": {"prev": 21299.57, "pago": 21299.57, "n": 27}, "OUTROS": {"prev": 82396.83899999999, "pago": 82396.83899999999, "n": 39}}, "outrosDetalhe": [{"nome": "MSM SOLUÇÕES", "prev": 36090.78, "pago": 36090.78, "n": 18}, {"nome": "GRUPO MRM", "prev": 25346.7, "pago": 25346.7, "n": 8}, {"nome": "ADVOCACIA", "prev": 17609.4, "pago": 17609.4, "n": 7}, {"nome": "SHEEP LOG", "prev": 2848.879, "pago": 2848.879, "n": 2}, {"nome": "MARIANA", "prev": 501.08000000000004, "pago": 501.08000000000004, "n": 4}], "meses": ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"], "ev": {"MOLINARI": [59009.829999999994, 46945.1, 63813.219999999994, 28814.889999999996, 6266.26, 189009.06, 37660.76, 51546.85, 47565.630000000005, 49016.240000000005, 50194.200000000004, 198516.24], "MARI": [2804.23, 1665.35, 2049.46, 732.14, 400.0, 0, 13648.39, 0, 0, 0, 0, 0], "OUTROS": [0, 0, 0, 18401.288999999997, 51528.19, 12467.36, 0, 0, 0, 0, 0, 0], "pago": [61814.060000000005, 48610.45, 65862.68, 47948.319, 58194.45000000001, 201476.42, 27113.649999999998, 0, 0, 0, 0, 0], "prev": [61814.060000000005, 48610.45, 65862.68, 47948.319, 58194.45000000001, 201476.42, 51309.15, 51546.85, 47565.630000000005, 49016.240000000005, 50194.200000000004, 198516.24]}, "cat": [{"cat": "APARTAMENTO", "MOLINARI": 396534.57, "MARI": 0, "OUTROS": 30958.519999999997, "total": 427493.09, "pago": 217193.09}, {"cat": "CARRO", "MOLINARI": 101197.09000000003, "MARI": 7996.92, "OUTROS": 9446.92, "total": 118640.93000000002, "pago": 71406.32999999999}, {"cat": "CASA", "MOLINARI": 92224.84, "MARI": 4509.1, "OUTROS": 16139.269999999999, "total": 112873.21, "pago": 58100.520000000004}, {"cat": "MARIANA", "MOLINARI": 74495.59999999999, "MARI": 5302.55, "OUTROS": 8699.08, "total": 88497.23, "pago": 56755.19}, {"cat": "MOLINARI", "MOLINARI": 70828.76000000001, "MARI": 630.0, "OUTROS": 3390.06, "total": 74848.82, "pago": 40729.63}, {"cat": "DIVERSOS", "MOLINARI": 34699.090000000004, "MARI": 1500.0, "OUTROS": 3709.899, "total": 39908.989, "pago": 25141.729}, {"cat": "VALENTINA", "MOLINARI": 32130.46, "MARI": 1361.0, "OUTROS": 3088.0, "total": 36579.46, "pago": 21769.46}, {"cat": "SAÚDE", "MOLINARI": 14864.369999999999, "MARI": 0, "OUTROS": 1581.5900000000001, "total": 16445.96, "pago": 8157.079999999999}, {"cat": "CONSÓRCIO", "MOLINARI": 5383.5, "MARI": 0, "OUTROS": 5383.5, "total": 10767.0, "pago": 10767.0}, {"cat": "JEISIANI", "MOLINARI": 6000.0, "MARI": 0, "OUTROS": 0, "total": 6000.0, "pago": 1000.0}], "prox90": [{"venc": "2026-07-20", "tit": "MOLINARI", "cat": "SAÚDE", "desc": "Plano de Saúde Mari / Valentina", "valor": 818.44, "mes": "JULHO", "conta": "—", "tipo": "Fixa/Variável", "dias": 2}, {"venc": "2026-07-20", "tit": "MOLINARI", "cat": "SAÚDE", "desc": "Plano de Saúde Molinari", "valor": 411.74, "mes": "JULHO", "conta": "—", "tipo": "Fixa/Variável", "dias": 2}, {"venc": "2026-07-20", "tit": "MOLINARI", "cat": "MOLINARI", "desc": "Cartão Molinari Sicredi", "valor": 4389.08, "mes": "JULHO", "conta": "—", "tipo": "Variável", "dias": 2}, {"venc": "2026-07-21", "tit": "MOLINARI", "cat": "CASA", "desc": "Fatura Cartão Nubank", "valor": 800.0, "mes": "JULHO", "conta": "—", "tipo": "Fixa/Variável", "dias": 3}, {"venc": "2026-07-25", "tit": "MOLINARI", "cat": "CASA", "desc": "Compagas", "valor": 138.98, "mes": "JULHO", "conta": "—", "tipo": "Fixa/Variável", "dias": 7}, {"venc": "2026-07-25", "tit": "MOLINARI", "cat": "DIVERSOS", "desc": "Cartão Itau - Mãe ULTIMA", "valor": 2567.26, "mes": "JULHO", "conta": "—", "tipo": "Fixa/Variável", "dias": 7}, {"venc": "2026-07-28", "tit": "MOLINARI", "cat": "APARTAMENTO", "desc": "Parcela Apartamento", "valor": 10300.0, "mes": "JULHO", "conta": "—", "tipo": "Fixa/Variável", "dias": 10}, {"venc": "2026-07-29", "tit": "MOLINARI", "cat": "CASA", "desc": "Aluguel Sayuri", "valor": 4270.0, "mes": "JULHO", "conta": "—", "tipo": "Fixa", "dias": 11}, {"venc": "2026-07-30", "tit": "MOLINARI", "cat": "DIVERSOS", "desc": "Empréstimo Mari", "valor": 500.0, "mes": "JULHO", "conta": "—", "tipo": "Fixa", "dias": 12}, {"venc": "2026-08-01", "tit": "MOLINARI", "cat": "CARRO", "desc": "Empréstimo Tiggo", "valor": 1450.0, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa", "dias": 14}, {"venc": "2026-08-05", "tit": "MOLINARI", "cat": "CASA", "desc": "Diarista Mensal", "valor": 2300.0, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa", "dias": 18}, {"venc": "2026-08-05", "tit": "MOLINARI", "cat": "CASA", "desc": "Água Chacara", "valor": 241.92, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa/Variável", "dias": 18}, {"venc": "2026-08-08", "tit": "MOLINARI", "cat": "VALENTINA", "desc": "Escola Valentina", "valor": 3050.0, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa", "dias": 21}, {"venc": "2026-08-10", "tit": "MOLINARI", "cat": "JEISIANI", "desc": "Parcela do Carro", "valor": 1000.0, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa", "dias": 23}, {"venc": "2026-08-10", "tit": "MOLINARI", "cat": "CASA", "desc": "Celular Mari", "valor": 109.99, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa", "dias": 23}, {"venc": "2026-08-10", "tit": "MOLINARI", "cat": "CASA", "desc": "Fibra Casa", "valor": 102.5, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa", "dias": 23}, {"venc": "2026-08-10", "tit": "MOLINARI", "cat": "CASA", "desc": "Condomínio Central Park", "valor": 1750.0, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa/Variável", "dias": 23}, {"venc": "2026-08-10", "tit": "MOLINARI", "cat": "MARIANA", "desc": "Fatura Cartão BB Mari", "valor": 4907.46, "mes": "AGOSTO", "conta": "—", "tipo": "Variável", "dias": 23}, {"venc": "2026-08-10", "tit": "MOLINARI", "cat": "MOLINARI", "desc": "Cartão Molinari Nubank", "valor": 3000.0, "mes": "AGOSTO", "conta": "—", "tipo": "Variável", "dias": 23}, {"venc": "2026-08-15", "tit": "MOLINARI", "cat": "CASA", "desc": "Aluguel Sayuri", "valor": 4250.0, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa", "dias": 28}, {"venc": "2026-08-15", "tit": "MOLINARI", "cat": "MARIANA", "desc": "Fatura Cartão Sicredi Mari", "valor": 4837.34, "mes": "AGOSTO", "conta": "—", "tipo": "Variável", "dias": 28}, {"venc": "2026-08-16", "tit": "MOLINARI", "cat": "CARRO", "desc": "Parcela Tiggo 7 - 8/28", "valor": 2338.85, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa", "dias": 29}, {"venc": "2026-08-17", "tit": "MOLINARI", "cat": "CARRO", "desc": "Parcela Tiggo 8 - 14/36", "valor": 5658.07, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa", "dias": 30}, {"venc": "2026-08-20", "tit": "MOLINARI", "cat": "SAÚDE", "desc": "Plano de Saúde Mari / Valentina", "valor": 1000.0, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa/Variável", "dias": 33}, {"venc": "2026-08-20", "tit": "MOLINARI", "cat": "SAÚDE", "desc": "Plano de Saúde Molinari", "valor": 411.74, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa/Variável", "dias": 33}, {"venc": "2026-08-20", "tit": "MOLINARI", "cat": "MOLINARI", "desc": "Cartão Molinari Sicredi", "valor": 3500.0, "mes": "AGOSTO", "conta": "—", "tipo": "Variável", "dias": 33}, {"venc": "2026-08-21", "tit": "MOLINARI", "cat": "CASA", "desc": "Fatura Cartão Nubank", "valor": 1000.0, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa/Variável", "dias": 34}, {"venc": "2026-08-25", "tit": "MOLINARI", "cat": "CASA", "desc": "Compagas", "valor": 138.98, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa/Variável", "dias": 38}, {"venc": "2026-08-28", "tit": "MOLINARI", "cat": "APARTAMENTO", "desc": "Parcela Apartamento", "valor": 10000.0, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa/Variável", "dias": 41}, {"venc": "2026-08-30", "tit": "MOLINARI", "cat": "DIVERSOS", "desc": "Empréstimo Mari", "valor": 500.0, "mes": "AGOSTO", "conta": "—", "tipo": "Fixa", "dias": 43}, {"venc": "2026-09-01", "tit": "MOLINARI", "cat": "CARRO", "desc": "Empréstimo Tiggo", "valor": 1450.0, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa", "dias": 45}, {"venc": "2026-09-05", "tit": "MOLINARI", "cat": "CASA", "desc": "Diarista Mensal", "valor": 2300.0, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa", "dias": 49}, {"venc": "2026-09-05", "tit": "MOLINARI", "cat": "CASA", "desc": "Água Chacara", "valor": 241.92, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa/Variável", "dias": 49}, {"venc": "2026-09-08", "tit": "MOLINARI", "cat": "VALENTINA", "desc": "Escola Valentina", "valor": 2940.0, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa", "dias": 52}, {"venc": "2026-09-09", "tit": "MOLINARI", "cat": "CASA", "desc": "Luz Central Park", "valor": 120.0, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa/Variável", "dias": 53}, {"venc": "2026-09-10", "tit": "MOLINARI", "cat": "JEISIANI", "desc": "Parcela do Carro", "valor": 1000.0, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa", "dias": 54}, {"venc": "2026-09-10", "tit": "MOLINARI", "cat": "CASA", "desc": "Celular Mari", "valor": 109.99, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa", "dias": 54}, {"venc": "2026-09-10", "tit": "MOLINARI", "cat": "CASA", "desc": "Fibra Casa", "valor": 102.5, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa", "dias": 54}, {"venc": "2026-09-10", "tit": "MOLINARI", "cat": "CASA", "desc": "Condomínio Central Park", "valor": 2366.49, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa/Variável", "dias": 54}, {"venc": "2026-09-10", "tit": "MOLINARI", "cat": "MARIANA", "desc": "Fatura Cartão BB Mari", "valor": 2819.28, "mes": "SETEMBRO", "conta": "—", "tipo": "Variável", "dias": 54}, {"venc": "2026-09-10", "tit": "MOLINARI", "cat": "MOLINARI", "desc": "Cartão Molinari Nubank", "valor": 3000.0, "mes": "SETEMBRO", "conta": "—", "tipo": "Variável", "dias": 54}, {"venc": "2026-09-15", "tit": "MOLINARI", "cat": "CASA", "desc": "Aluguel Sayuri", "valor": 3537.7, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa", "dias": 59}, {"venc": "2026-09-15", "tit": "MOLINARI", "cat": "MARIANA", "desc": "Fatura Cartão Sicredi Mari", "valor": 3000.0, "mes": "SETEMBRO", "conta": "—", "tipo": "Variável", "dias": 59}, {"venc": "2026-09-16", "tit": "MOLINARI", "cat": "CARRO", "desc": "Parcela Tiggo 7 - 9/28", "valor": 2338.85, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa", "dias": 60}, {"venc": "2026-09-17", "tit": "MOLINARI", "cat": "CARRO", "desc": "Parcela Tiggo 8 - 15/36", "valor": 5658.07, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa", "dias": 61}, {"venc": "2026-09-20", "tit": "MOLINARI", "cat": "SAÚDE", "desc": "Plano de Saúde Mari / Valentina", "valor": 1000.0, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa/Variável", "dias": 64}, {"venc": "2026-09-20", "tit": "MOLINARI", "cat": "SAÚDE", "desc": "Plano de Saúde Molinari", "valor": 411.74, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa/Variável", "dias": 64}, {"venc": "2026-09-20", "tit": "MOLINARI", "cat": "MOLINARI", "desc": "Cartão Molinari Sicredi", "valor": 1230.11, "mes": "SETEMBRO", "conta": "—", "tipo": "Variável", "dias": 64}, {"venc": "2026-09-21", "tit": "MOLINARI", "cat": "CASA", "desc": "Fatura Cartão Nubank", "valor": 1000.0, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa/Variável", "dias": 65}, {"venc": "2026-09-25", "tit": "MOLINARI", "cat": "CASA", "desc": "Compagas", "valor": 138.98, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa/Variável", "dias": 69}, {"venc": "2026-09-28", "tit": "MOLINARI", "cat": "DIVERSOS", "desc": "Multas Parceladas", "valor": 2300.0, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa/Variável", "dias": 72}, {"venc": "2026-09-28", "tit": "MOLINARI", "cat": "APARTAMENTO", "desc": "Parcela Apartamento", "valor": 10000.0, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa/Variável", "dias": 72}, {"venc": "2026-09-30", "tit": "MOLINARI", "cat": "DIVERSOS", "desc": "Empréstimo Mari", "valor": 500.0, "mes": "SETEMBRO", "conta": "—", "tipo": "Fixa", "dias": 74}, {"venc": "2026-10-01", "tit": "MOLINARI", "cat": "CARRO", "desc": "Empréstimo Tiggo", "valor": 1450.0, "mes": "OUTUBRO", "conta": "—", "tipo": "Fixa", "dias": 75}, {"venc": "2026-10-05", "tit": "MOLINARI", "cat": "CASA", "desc": "Diarista Mensal", "valor": 2300.0, "mes": "OUTUBRO", "conta": "—", "tipo": "Fixa", "dias": 79}, {"venc": "2026-10-05", "tit": "MOLINARI", "cat": "CASA", "desc": "Água Chacara", "valor": 241.92, "mes": "OUTUBRO", "conta": "—", "tipo": "Fixa/Variável", "dias": 79}, {"venc": "2026-10-08", "tit": "MOLINARI", "cat": "VALENTINA", "desc": "Escola Valentina", "valor": 2940.0, "mes": "OUTUBRO", "conta": "—", "tipo": "Fixa", "dias": 82}, {"venc": "2026-10-09", "tit": "MOLINARI", "cat": "CASA", "desc": "Luz Central Park", "valor": 120.0, "mes": "OUTUBRO", "conta": "—", "tipo": "Fixa/Variável", "dias": 83}, {"venc": "2026-10-10", "tit": "MOLINARI", "cat": "JEISIANI", "desc": "Parcela do Carro", "valor": 1000.0, "mes": "OUTUBRO", "conta": "—", "tipo": "Fixa", "dias": 84}, {"venc": "2026-10-10", "tit": "MOLINARI", "cat": "CASA", "desc": "Celular Mari", "valor": 109.99, "mes": "OUTUBRO", "conta": "—", "tipo": "Fixa", "dias": 84}, {"venc": "2026-10-10", "tit": "MOLINARI", "cat": "CASA", "desc": "Fibra Casa", "valor": 102.5, "mes": "OUTUBRO", "conta": "—", "tipo": "Fixa", "dias": 84}, {"venc": "2026-10-10", "tit": "MOLINARI", "cat": "CASA", "desc": "Condomínio Central Park", "valor": 2366.49, "mes": "OUTUBRO", "conta": "—", "tipo": "Fixa/Variável", "dias": 84}, {"venc": "2026-10-10", "tit": "MOLINARI", "cat": "MARIANA", "desc": "Fatura Cartão BB Mari", "valor": 3500.0, "mes": "OUTUBRO", "conta": "—", "tipo": "Variável", "dias": 84}, {"venc": "2026-10-10", "tit": "MOLINARI", "cat": "MOLINARI", "desc": "Cartão Molinari Nubank", "valor": 3000.0, "mes": "OUTUBRO", "conta": "—", "tipo": "Variável", "dias": 84}, {"venc": "2026-10-15", "tit": "MOLINARI", "cat": "CASA", "desc": "Aluguel Sayuri", "valor": 3537.7, "mes": "OUTUBRO", "conta": "—", "tipo": "Fixa", "dias": 89}, {"venc": "2026-10-15", "tit": "MOLINARI", "cat": "MARIANA", "desc": "Fatura Cartão Sicredi Mari", "valor": 2000.0, "mes": "OUTUBRO", "conta": "—", "tipo": "Variável", "dias": 89}, {"venc": "2026-10-16", "tit": "MOLINARI", "cat": "CARRO", "desc": "Parcela Tiggo 7 - 10/28", "valor": 2338.85, "mes": "OUTUBRO", "conta": "—", "tipo": "Fixa", "dias": 90}], "tot90": 148315.43000000002, "tipo": [{"tipo": "Fixa/Variável", "valor": 517514.4289999997}, {"tipo": "Fixa", "valor": 245910.0900000001}, {"tipo": "Variável", "valor": 160960.26}, {"tipo": "Única", "valor": 7669.91}], "pag": [{"nome": "—", "valor": 421034.66000000003}]};
+let titFiltro='TODOS', winAtual=90;
+const BRL=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+const BRL2=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:2});
+const ABRM=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const MESNOME={JANEIRO:'Janeiro',FEVEREIRO:'Fevereiro','MARÇO':'Março',ABRIL:'Abril',MAIO:'Maio',JUNHO:'Junho',JULHO:'Julho',AGOSTO:'Agosto',SETEMBRO:'Setembro',OUTUBRO:'Outubro',NOVEMBRO:'Novembro',DEZEMBRO:'Dezembro'};
+const fmtData=iso=>{const d=iso.split('-');return d[2]+'/'+d[1]+'/'+d[0];};
+['dtAtu','dtAtu2'].forEach(id=>document.getElementById(id).textContent=DATA.atualizado);
+['mesAtu','mesAtu2','mesAtu3'].forEach(id=>document.getElementById(id).textContent=DATA.mesAtual);
+const COR={mol:'#1f3864',mari:'#c2185b',outros:'#6b7280',verde:'#2e7d32',ambar:'#b7791f',azul2:'#2e5496',verm:'#c0392b',cinza:'#d9dce2'};
+Chart.defaults.font.family="-apple-system,'Segoe UI',Roboto,Arial,sans-serif";
+Chart.defaults.font.size=11;Chart.defaults.color='#6b7280';
+let charts={};
+
+// FAIXA DE ALERTA
+function renderAlert(){
+  const j=DATA.janelas, fm=DATA.faltamMes;
+  document.getElementById('alertStrip').innerHTML=`
+    <div class="a-box destaque"><div class="ab-lbl">⚠ Faltam no mês</div>
+      <div class="ab-val">${BRL(fm.val)}</div><div class="ab-sub">${fm.n} contas em ${DATA.mesAtual}</div></div>
+    <div class="a-box d7"><div class="ab-lbl">Em aberto · 7 dias</div>
+      <div class="ab-val">${BRL(j.d7.val)}</div><div class="ab-sub">${j.d7.n} contas</div></div>
+    <div class="a-box d15"><div class="ab-lbl">Em aberto · 15 dias</div>
+      <div class="ab-val">${BRL(j.d15.val)}</div><div class="ab-sub">${j.d15.n} contas</div></div>
+    <div class="a-box d30"><div class="ab-lbl">Em aberto · 30 dias</div>
+      <div class="ab-val">${BRL(j.d30.val)}</div><div class="ab-sub">${j.d30.n} contas</div></div>
+    <div class="a-box d90"><div class="ab-lbl">Em aberto · 90 dias</div>
+      <div class="ab-val">${BRL(j.d90.val)}</div><div class="ab-sub">${j.d90.n} contas</div></div>`;
+}
+
+// KPIs ano (com % quitado pago x a vencer)
+function renderKPIs(){
+  const k=DATA.kpi;
+  document.getElementById('kpis').innerHTML=`
+    <div class="card kpi prev"><div class="k-lbl">Previsto (ano)</div><div class="k-val">${BRL(k.prev)}</div><div class="k-sub">${k.n} lançamentos</div></div>
+    <div class="card kpi pago"><div class="k-lbl">Pago (ano)</div><div class="k-val">${BRL(k.pago)}</div><div class="k-sub">${(k.pct_pago*100).toFixed(1)}% do previsto</div></div>
+    <div class="card kpi aberto"><div class="k-lbl">A vencer (ano)</div><div class="k-val">${BRL(k.aberto)}</div><div class="k-sub">${(k.pct_vencer*100).toFixed(1)}% do previsto</div></div>
+    <div class="card kpi pct"><div class="k-lbl">% Quitado × A vencer</div>
+      <div class="k-val">${(k.pct_pago*100).toFixed(1)}% <span style="font-size:.9rem;color:var(--ambar)">/ ${(k.pct_vencer*100).toFixed(1)}%</span></div>
+      <div class="split-bar"><div class="pg" style="width:${(k.pct_pago*100).toFixed(1)}%"></div><div class="vc" style="width:${(k.pct_vencer*100).toFixed(1)}%"></div></div>
+      <div class="split-leg"><span>● Pago</span><span>A vencer ●</span></div></div>`;
+}
+
+function itemHTML(x){
+  let cls='',badge='';
+  if(x.dias<=7){cls='urg';badge=x.dias<=0?'hoje':x.dias+'d';}
+  else if(x.dias<=15){cls='soon';badge=x.dias+'d';}
+  else badge=x.dias+'d';
+  const d=x.venc.split('-');const dia=d[2],mes=ABRM[parseInt(d[1])];
+  const tcls=x.tit==='MARI'?'mari':(x.tit==='OUTROS'?'outros':'mol');
+  const nome=x.tit==='MARI'?'Mari':(x.tit==='OUTROS'?'Outros':'Molinari');
+  return `<div class="a-item ${cls}">
+    <div class="a-date"><div class="d">${dia}</div><div class="m">${mes}</div></div>
+    <div class="a-body"><div class="a-desc">${x.desc}</div>
+      <div class="a-meta"><span class="a-tag ${tcls}">${nome}</span>${x.cat} · ${x.tipo}
+        <span class="a-daysbadge">${badge}</span></div></div>
+    <div class="a-right"><div class="a-val">${BRL2(x.valor)}</div><div class="a-conta">${x.conta}</div></div>
+  </div>`;
+}
+
+// Contas faltantes do mês
+function renderFalta(){
+  const fm=DATA.faltamMes;
+  document.getElementById('faltaTot').textContent=BRL(fm.val);
+  document.getElementById('faltaN').textContent=fm.n;
+  const el=document.getElementById('faltaList');
+  if(!fm.itens.length){el.innerHTML='<div class="empty">Nenhuma conta em aberto no mês. 🎉</div>';return;}
+  el.innerHTML=fm.itens.map(itemHTML).join('');
+}
+
+// Agenda por janela
+function renderAgenda(){
+  const items=DATA.prox90.filter(x=>x.dias<=winAtual);
+  const tot=items.reduce((s,x)=>s+x.valor,0);
+  document.getElementById('janTot').textContent=BRL(tot);
+  document.getElementById('janN').textContent=items.length;
+  const el=document.getElementById('agendaList');
+  if(!items.length){el.innerHTML='<div class="empty">Nenhuma conta a vencer nesta janela.</div>';return;}
+  let html='',mesAtual='';
+  items.forEach(x=>{
+    if(x.mes!==mesAtual){mesAtual=x.mes;html+=`<div class="month-sep">${MESNOME[x.mes]||x.mes}</div>`;}
+    html+=itemHTML(x);
+  });
+  el.innerHTML=html;
+}
+function setWin(btn,w){
+  winAtual=w;
+  document.querySelectorAll('#winFilters .win-chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  renderAgenda();
+}
+
+function renderEvol(){
+  const ctx=document.getElementById('chEvol');
+  if(charts.evol)charts.evol.destroy();
+  let ds;
+  if(titFiltro==='TODOS'){
+    ds=[{label:'Molinari',data:DATA.ev.MOLINARI,borderColor:COR.mol,backgroundColor:COR.mol,tension:.3,borderWidth:3,pointRadius:3,fill:false},
+        {label:'Mari',data:DATA.ev.MARI,borderColor:COR.mari,backgroundColor:COR.mari,tension:.3,borderWidth:3,pointRadius:3,fill:false},
+        {label:'Outros',data:DATA.ev.OUTROS,borderColor:COR.outros,backgroundColor:COR.outros,tension:.3,borderWidth:2,pointRadius:2,borderDash:[4,3],fill:false}];
+  }else{
+    const c=titFiltro==='MARI'?COR.mari:(titFiltro==='OUTROS'?COR.outros:COR.mol);
+    const nome=titFiltro==='MARI'?'Mari':(titFiltro==='OUTROS'?'Outros':'Molinari');
+    ds=[{label:nome,data:DATA.ev[titFiltro],borderColor:c,backgroundColor:c+'22',tension:.3,borderWidth:3,pointRadius:3,fill:true}];
+  }
+  charts.evol=new Chart(ctx,{type:'line',data:{labels:DATA.meses,datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+BRL2(c.parsed.y)}}},
+      scales:{y:{ticks:{callback:v=>BRL(v)}}}}});
+}
+function renderPagoAberto(){
+  const ctx=document.getElementById('chPagoAberto');
+  if(charts.pa)charts.pa.destroy();
+  const aberto=DATA.ev.prev.map((p,i)=>p-DATA.ev.pago[i]);
+  charts.pa=new Chart(ctx,{type:'bar',data:{labels:DATA.meses,datasets:[
+    {label:'Pago',data:DATA.ev.pago,backgroundColor:COR.verde,stack:'s'},
+    {label:'Em aberto',data:aberto,backgroundColor:COR.ambar,stack:'s'}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+BRL2(c.parsed.y)}}},
+      scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>BRL(v)}}}}});
+}
+function renderTipo(){
+  const ctx=document.getElementById('chTipo');
+  if(charts.tipo)charts.tipo.destroy();
+  charts.tipo=new Chart(ctx,{type:'doughnut',data:{labels:DATA.tipo.map(t=>t.tipo),
+    datasets:[{data:DATA.tipo.map(t=>t.valor),backgroundColor:['#1f3864','#2e5496','#5b7cb0','#a3b6d4','#d9dce2']}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
+      plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>c.label+': '+BRL2(c.parsed)}}}}});
+}
+function renderCat(){
+  const ctx=document.getElementById('chCat');
+  if(charts.cat)charts.cat.destroy();
+  const cats=DATA.cat.filter(c=>c.total>0);
+  let ds;
+  if(titFiltro==='TODOS'){
+    ds=[{label:'Molinari',data:cats.map(c=>c.MOLINARI),backgroundColor:COR.mol},
+        {label:'Mari',data:cats.map(c=>c.MARI),backgroundColor:COR.mari},
+        {label:'Outros',data:cats.map(c=>c.OUTROS||0),backgroundColor:COR.outros}];
+  }else{
+    const c=titFiltro==='MARI'?COR.mari:(titFiltro==='OUTROS'?COR.outros:COR.mol);
+    const nome=titFiltro==='MARI'?'Mari':(titFiltro==='OUTROS'?'Outros':'Molinari');
+    ds=[{label:nome,data:cats.map(x=>x[titFiltro]||0),backgroundColor:c}];
+  }
+  charts.cat=new Chart(ctx,{type:'bar',data:{labels:cats.map(c=>c.cat),datasets:ds},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+BRL2(c.parsed.x)}}},
+      scales:{x:{stacked:titFiltro==='TODOS',ticks:{callback:v=>BRL(v)}},y:{stacked:titFiltro==='TODOS'}}}});
+}
+function renderPag(){
+  const ctx=document.getElementById('chPag');
+  if(charts.pag)charts.pag.destroy();
+  charts.pag=new Chart(ctx,{type:'bar',data:{labels:DATA.pag.map(p=>p.nome),
+    datasets:[{label:'Previsto',data:DATA.pag.map(p=>p.valor),backgroundColor:COR.azul2}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>BRL2(c.parsed.x)}}},
+      scales:{x:{ticks:{callback:v=>BRL(v)}}}}});
+}
+function setTit(btn,t){
+  titFiltro=t;
+  document.querySelectorAll('.filters .chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  renderEvol();renderCat();
+  document.getElementById('secOutros').style.display = (t==='OUTROS') ? '' : 'none';
+}
+function renderOutros(){
+  const lista = DATA.outrosDetalhe || [];
+  const el = document.getElementById('outrosList');
+  if(!lista.length){el.innerHTML='<div class="empty">Nenhum lançamento de terceiros no período.</div>';return;}
+  el.innerHTML = lista.map(o=>`
+    <div class="outros-row">
+      <div><div class="on">${o.nome}</div><div class="osub">${o.n} lançamento(s)</div></div>
+      <div style="text-align:right"><div class="ov">${BRL2(o.prev)}</div><div class="osub">Pago: ${BRL2(o.pago)}</div></div>
+    </div>`).join('');
+}
+function renderAll(){
+  renderAlert();renderKPIs();renderFalta();renderAgenda();
+  renderEvol();renderPagoAberto();renderTipo();renderCat();renderPag();renderOutros();
+}
+renderAll();
+</script>
+</body>
+</html>
